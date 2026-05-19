@@ -359,11 +359,10 @@ class DataWorker(QThread):
                                    progress=False, auto_adjust=True)
             hist_list = []
             if not history.empty:
-                for idx_row in history.itertuples():
-                    hist_list.append({
-                        "date": str(idx_row.Index.date()) if hasattr(idx_row.Index, 'date') else str(idx_row.Index),
-                        "close": float(idx_row.Close),
-                    })
+                close_col = "Close" if "Close" in history.columns else history.columns[3]
+                for i, row in history.iterrows():
+                    ts = i.date() if hasattr(i, 'date') else str(i)
+                    hist_list.append({"date": str(ts), "close": float(row[close_col])})
 
             # 成分股 — 逐个获取 (保证数据完整)
             comp_info = {}
