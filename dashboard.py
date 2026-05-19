@@ -359,10 +359,16 @@ class DataWorker(QThread):
                                    progress=False, auto_adjust=True)
             hist_list = []
             if not history.empty:
-                close_col = "Close" if "Close" in history.columns else history.columns[3]
-                for i, row in history.iterrows():
-                    ts = i.date() if hasattr(i, 'date') else str(i)
-                    hist_list.append({"date": str(ts), "close": float(row[close_col])})
+                # 确保拿到标量 close 值（兼容不同 yfinance/pandas 版本）
+                if isinstance(history.columns, __import__('pandas').MultiIndex):
+                    closes = history.xs("Close", axis=1, level=0).squeeze()
+                elif "Close" in history.columns:
+                    closes = history["Close"]
+                else:
+                    closes = history.iloc[:, 3]  # OHLC 中 Close 是第 4 列
+                for ts, val in closes.items():
+                    d = ts.date() if hasattr(ts, 'date') else str(ts)
+                    hist_list.append({"date": str(d), "close": float(val)})
 
             # 成分股 — 逐个获取 (保证数据完整)
             comp_info = {}
